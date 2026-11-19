@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Временные тестовые файлы
+diagnose.py
+test_manual.py
+test.py
+test_*.py
+!tests/test_*.py
+
+# Проектные файлы
+output_text.txt
+compiled_rules.json
+data/text.txt
+structure.txt
+
+# Исходники словарей не нужны в пакете
+src/crispy_ipa/data/*.txt
+
+# OS
+.DS_Store
+Thumbs.db
