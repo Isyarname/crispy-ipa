@@ -7,7 +7,7 @@ name = "crispy-ipa"
 version = "0.0.1"
 description = "automatic english-to-IPA text transcriber"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "kodovy-pesets" }]
@@ -46,7 +46,6 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/Isyarname/crispy-ipa"
 Repository = "https://github.com/Isyarname/crispy-ipa"
-Changelog = "https://github.com/Isyarname/crispy-ipa/blob/main/docs/CHANGELOG.md"
 Issues = "https://github.com/Isyarname/crispy-ipa/issues"
 
 # src-layout: setuptools ищет пакеты внутри src/
