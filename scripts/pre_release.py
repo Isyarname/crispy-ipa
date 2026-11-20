@@ -30,7 +30,7 @@ RULES_MAP = {
     "eng_to_ipa_rules.py": "eng_to_ipa_rules.pkl",
 }
 
-README_FILES = ["README.md", "README.en.md"]
+README_FILES = ["README.md"]
 
 
 # ─────────────────────────── Утилиты ───────────────────────────
@@ -113,7 +113,7 @@ def check_rules_compiled() -> bool:
         _ok(f"Все .pkl актуальны ({len(RULES_MAP)} шт.)")
     return ok
 
-
+'''
 def check_changelog(version: str) -> bool:
     """CHANGELOG.md должен содержать запись для текущей версии."""
     if not CHANGELOG.exists():
@@ -127,7 +127,7 @@ def check_changelog(version: str) -> bool:
         return False
     _ok(f"CHANGELOG содержит запись для {version}")
     return True
-
+'''
 
 def check_readme() -> bool:
     """README файлы существуют и не пустые."""

@@ -1,7 +1,6 @@
 """Бенчмарк: сравнение EN -> IPA движков и их транслитерации в кириллицу.
 
-Все движки приводятся к IPA, затем пропускаются через правила трансляции
-из основного пакета (ipa_to_ru).
+Все движки приводятся к IPA
 
 Запуск:
     py scripts/benchmark_ipa_engines.py
@@ -17,7 +16,7 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-from crispy_ipa import Transcriber, ipa_to_ru
+from crispy_ipa import Transcriber
 
 PROJECT_ROOT = Path(__file__).parent.parent
 DEFAULT_TEXT = PROJECT_ROOT / "examples" / "text.txt"
@@ -260,19 +259,6 @@ def print_results(engines: dict, translit_rules: list, text: str) -> None:
             print(f"\n--- {name} ---")
             print("(движок недоступен)\n")
             continue
-
-        try:
-            ipa_text = fn(text)
-            # Транслитерируем IPA в кириллицу
-            cyr_text = ipa_to_ru.convert(ipa_text, translit_rules)
-
-            print(f"\n--- {name} ---")
-            print(f"[IPA]:\n{ipa_text}\n")
-            print(f"[Кириллица]:\n{cyr_text}\n")
-
-        except Exception as e:
-            print(f"\n--- {name} ---")
-            print(f"Ошибка при выполнении: {type(e).__name__}: {e}\n")
 
     print("=" * 100)
 

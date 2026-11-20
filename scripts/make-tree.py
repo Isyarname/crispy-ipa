@@ -51,7 +51,7 @@ CUSTOM_ORDER = {
 }
 
 MERGES = [
-    ("README.md", "README.ru.md", "README.md / README.ru.md"),
+    ("README.md"),
 ]
 
 
