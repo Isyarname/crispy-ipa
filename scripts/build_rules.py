@@ -4,7 +4,7 @@ from pathlib import Path
 from importlib.util import spec_from_file_location, module_from_spec
 
 # Прямой импорт: файл лежит в этой же папке (scripts/)
-from dsl_parser import build_rules
+from dsl_parser import parse_rules
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -26,7 +26,7 @@ def compile_dsl_rules(source_file: Path, output_file: Path) -> None:
     raw_macros = getattr(module, "macros", {})
     raw_rules = getattr(module, "rules", "")
 
-    compiled = build_rules(raw_rules, raw_macros)
+    compiled = parse_rules(raw_rules, raw_macros)
 
     with open(output_file, "wb") as f:
         pickle.dump(compiled, f, protocol=pickle.HIGHEST_PROTOCOL)

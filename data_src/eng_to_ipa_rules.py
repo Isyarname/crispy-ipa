@@ -2,92 +2,86 @@
 macros = {
 	"[V]": "[aeiouy]",
 	"[C]":"[bcdfghklmnpqrstvwxz]",
-	"[V']": "(ə|a|ɑː|æ|ʌ|uː|ʊ|ɪ|iː|ɒ|ɔː|e|ɜː)",
+	"[V']": "(ə|a|ɑː|æ|ʌ|uː|ʊ|ɪ|iː|ɑ|ɔː|e|ɜː)",
 	"[Z']":"(b|d|g|v|z|ð|ʒ|m|n|ŋ|l|r|w)",
-	"[!Z']":"[ptkfsθʃ]",
-	"i?": "(i|)",
-	"t?": "(t|)",
-    "!ʲ": "(?!ʲ)",
-    "_":""
-
+	"[!Z]":"[hptkfs]",
+	"[!Z']":"[hptkfsθʃ]",
 }
 
 
 
 rules = '''
 
+kn -> n
+gn -> n
+mb -> m
+h -> _ / [V]_#
+
+
 j -> dʒ
-[V]h$ -> [V]
 
-
-[ABCDEFGHIJKLMNOPQRSTUVWXYZ] -> (ej|biː|siː|diː|iː|ef|dʒiː|ejtʃ|aj|dʒej|kej|el|em|en|oʊ|piː|kjuː|ɑː|es|tiː|juː|viː|dʌbəljuː|eks|waj|zed)
-
-y[aeiou] -> j[aeiou]
-ti[oa]n$ -> ʃən
-[V]sion -> [V]ʒən
-[C]sion -> [C]ʃən
-[tc]ial$ -> ʃəl
-ture$ -> tʃə
+y -> j / _[aeiou]
+ti[oa] -> ʃə / _n#
+sion -> ʒən / [V]_
+sion -> ʃən / [C]_
+[tc]ial -> ʃəl / _#
+ture -> tʃə / _#
 tech -> tek
-core$ -> kɔː
 [tc]ious -> ʃəs
 micro -> majkro
-^pre -> prɪ
-igh->aj
-gh->g
-qu -> kw
-^x[V] -> z[V]
-x -> ks
-sch -> sk
-sc[eiy] -> s[eiy]
-t?ch -> tʃ
-sh -> ʃ
-th -> θ
-ph -> f
-c[eiy] -> s[eiy]
+pre -> prɪ / #_
+
+es -> ɪz / [szʃʒ]_#
+s -> z / [Z']_#
+ed -> ɪd / [td]_#
+ed -> t / [!Z']_#
+ed -> d / [Z']_#
+
+[C]{2} -> [C]
 
 
-[oeiu]re -> (ɔː|ɪ|aj|jʊ)ə
-[aeiouy]r![V] -> (ɑː|ɜː|ɜː|ɔː|ɜː|ɜː)
+y -> i
+
+
 all -> ɔːl
 alk -> ɔːk
 alm -> ɑːm
 old -> oʊld
 ind -> ajnd
 a[uw] -> ɔː
-ea[C] -> iː[C]
-oa[C] -> oʊ[C]
-ai[C] -> ej[C]
-ou[C] -> aʊ[C]
+ea -> iː / _[C]
+oa -> oʊ / _[C]
+ai -> ej / _[C]
+ou -> aʊ / _[C]
 ook -> ʊk
 (oo|oe) -> uː
 (ee|ie) -> iː
 
+[aio][C]e -> (ej|aj|oʊ)[C] / _#
+[aio] -> (ej|aj|oʊ) / _[C][V]
+u[C]e -> juː[C] / _#
+[aeiou] -> [æeɪɑʌ] / _[C]![V]
 
-[aio][C]e$ -> (ej|aj|oʊ)[C]
-[aio][C][V] -> (ej|aj|oʊ)[C][V]
-[aio][C][V'] -> (ej|aj|oʊ)[C][V']
-u[C]e -> juː[C]e
-[aeiou][C]![V] -> [æeɪɒʌ][C]
-[vs]e[sd]?$ -> [vs][sd]?
-y -> i
 e[wu] -> juː
-n[gk] -> ŋ[gk]
-kn -> n
-gn -> n
-mb -> m
+
+igh->aj
+gh->g
+qu -> kw
+x -> z / #_[V]
+x -> ks
+sch -> sk
+sc -> s / _[eiy]
+sh -> ʃ
+th -> θ
+ph -> f
+c -> s / _[eiy]
+
+n -> ŋ / _[gk]
+g -> _ / ŋ_#
+
 c -> k
 r -> ɹ
 
-[szʃʒ]es$ -> [szʃʒ]ɪz
-
-[Z']s$ -> [Z']z
-[!Z']s$ -> [!Z']s
-
-[td]ed$ -> [td]ɪd
-[!Z']ed$ -> [!Z']t
-[Z']ed$ -> [Z']d
-
-[C]{2} -> [C]
+[ABCDEFGHIJKLMNOPQRSTUVWXYZ] -> (ej|biː|siː|diː|iː|ef|dʒiː|ejtʃ|aj|dʒej|kej|el|em|en|oʊ|piː|kjuː|ɑɹ|es|tiː|juː|viː|dʌbəljuː|eks|waj|ziː)
 
 '''
