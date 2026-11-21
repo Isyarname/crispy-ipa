@@ -79,16 +79,11 @@ def arpabet_tokens_to_ipa(tokens: list[str]) -> str:
 
 def init_our_hybrid():
     """Наш движок: словарь + правила EN → IPA."""
-    from crispy_ipa.eng_to_ipa_hybrid import transcribe as hybrid_transcribe
+    from crispy_ipa import Transcriber
     t = Transcriber()
 
     def fn(text: str) -> str:
-        return hybrid_transcribe(
-            text,
-            t._merged_vocabulary,
-            t._long_keys,
-            t._eng_to_ipa_rules,
-        )
+        return t.transcribe(text)
 
     return fn
 
@@ -245,28 +240,33 @@ def print_speed_table(results: dict, rounds: int) -> None:
     print("=" * 100)
 
 
-def print_results(engines: dict, translit_rules: list, text: str) -> None:
-    """Выводит IPA и Кириллицу для каждого движка."""
+def print_results(engines: dict, text: str) -> None:
+    """Выводит IPA для каждого движка."""
     print("\n" + "=" * 100)
-    print("РЕЗУЛЬТАТЫ (IPA и Транслитерация)")
+    print("РЕЗУЛЬТАТЫ (IPA)")
     print("=" * 100)
 
     print(f"Входной текст:\n{text}\n")
     print("-" * 100)
 
     for name, fn in engines.items():
+        print(f"\n--- {name} ---")
         if fn is None:
-            print(f"\n--- {name} ---")
-            print("(движок недоступен)\n")
+            print("(движок недоступен)")
             continue
+        try:
+            print(fn(text))
+        except Exception as e:
+            print(f"(ошибка при выполнении: {type(e).__name__}: {e})")
 
-    print("=" * 100)
+    print("\n" + "=" * 100)
+
 
 
 # ─────────────────────────── Главная ───────────────────────────
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="IPA engines and transliteration benchmark")
+    parser = argparse.ArgumentParser(description="IPA engines benchmark")
     parser.add_argument("--text", type=Path, default=DEFAULT_TEXT)
     parser.add_argument("--rounds", type=int, default=5)
     args = parser.parse_args()
@@ -277,10 +277,6 @@ def main() -> None:
 
     raw_text = args.text.read_text(encoding="utf-8").strip()
     print(f"Загружен текст ({len(raw_text)} символов).")
-
-    # Получаем правила транслитерации для дальнейшего использования
-    t = Transcriber()
-    translit_rules = t._transliteration_rules
 
     # Инициализация
     print("\nИнициализация движков...")
@@ -309,7 +305,7 @@ def main() -> None:
 
     # Вывод
     print_speed_table(results, args.rounds)
-    print_results(engines, translit_rules, raw_text)
+    print_results(engines, raw_text)
 
 
 if __name__ == "__main__":
