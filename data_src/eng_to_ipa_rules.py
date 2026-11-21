@@ -1,87 +1,78 @@
 
 macros = {
 	"[V]": "[aeiouy]",
-	"[C]":"[bcdfghklmnpqrstvwxz]",
-	"[V']": "(ə|a|ɑː|æ|ʌ|uː|ʊ|ɪ|iː|ɑ|ɔː|e|ɜː)",
-	"[Z']":"(b|d|g|v|z|ð|ʒ|m|n|ŋ|l|r|w)",
+	"[C]":"(b|c|d|f|g|h|k|l|m|n|p|q|r|s|t|v|w|x|z|sh|ch|th)",
+	"[Z]":"(b|d|g|v|z|ʒ|m|n|l|r|w)",
 	"[!Z]":"[hptkfs]",
-	"[!Z']":"[hptkfsθʃ]",
 }
 
 
 
 rules = '''
 
-kn -> n
-gn -> n
-mb -> m
-h -> _ / [V]_#
+h -> _ / [V]_#                      Hannah
+c -> s / _[eiy]                     special
+sch -> sk                           school
+igh->aj                             light
+gh->g                               ghost
 
-
-j -> dʒ
-
-y -> j / _[aeiou]
-ti[oa] -> ʃə / _n#
-sion -> ʒən / [V]_
-sion -> ʃən / [C]_
-[tc]ial -> ʃəl / _#
+tio -> ʃə / _n#                     notion
+tia -> ʃə / _n#
+sion -> ʒən / [V]_                  explosion
+sion -> ʃən / [C]_                  commission
+tial -> ʃəl / _#                    spatial
+cial -> ʃəl / _#                    special
 ture -> tʃə / _#
-tech -> tek
-[tc]ious -> ʃəs
-micro -> majkro
-pre -> prɪ / #_
+tech -> tek                         technology
 
-es -> ɪz / [szʃʒ]_#
-s -> z / [Z']_#
-ed -> ɪd / [td]_#
-ed -> t / [!Z']_#
-ed -> d / [Z']_#
+micro -> majkro                     Microsoft
+[tc]ious -> ʃəs                     cautious
+e -> ɪ / #pr_                       pregame
+all -> ɔl                           ball
+alk -> ɔk                           chalk
+a -> ɜ / _y                         way
+i -> aj / _nd                       find
+ie -> aj / _d#                      died
+a[uw] -> ɔ                          cautious
+ea -> i                             tea
+oa -> oʊ / _[C]                     coal
+o -> oʊ / _#                        hello
+ai -> ej / _[C]                     said
+ou -> aʊ / _[C]                     thousand
+oo -> u                             look
+ee -> i                             see
+[aio] -> (ej|aj|oʊ) / _[C]e#        made, hide, code
+[ao] -> (ej|oʊ) / _[C][V]           shader, fotobomb
+u -> ju / _[C]e#                    reduce
+u -> ʌ / _[C]![V]                   hundred
+e[wu] -> ju                         few
+e -> _ / !#[C]_#
 
-[C]{2} -> [C]
-
-
+y -> j / _[V]
+y -> j / [V]_
 y -> i
+[aeio] -> [æɜɪɑ] / _[C]
 
 
-all -> ɔːl
-alk -> ɔːk
-alm -> ɑːm
-old -> oʊld
-ind -> ajnd
-a[uw] -> ɔː
-ea -> iː / _[C]
-oa -> oʊ / _[C]
-ai -> ej / _[C]
-ou -> aʊ / _[C]
-ook -> ʊk
-(oo|oe) -> uː
-(ee|ie) -> iː
+s -> z / [Z]_#                      sons
+ed -> t / [!Z]_#                    dropped
+ed -> d / [Z]_#                     sniffled
 
-[aio][C]e -> (ej|aj|oʊ)[C] / _#
-[aio] -> (ej|aj|oʊ) / _[C][V]
-u[C]e -> juː[C] / _#
-[aeiou] -> [æeɪɑʌ] / _[C]![V]
 
-e[wu] -> juː
-
-igh->aj
-gh->g
+x -> gz / #_[V]                     example
+x -> ks                             explosion
 qu -> kw
-x -> z / #_[V]
-x -> ks
-sch -> sk
-sc -> s / _[eiy]
+tch -> tʃ
+ch -> tʃ
 sh -> ʃ
 th -> θ
 ph -> f
-c -> s / _[eiy]
-
-n -> ŋ / _[gk]
-g -> _ / ŋ_#
-
+ck -> k
 c -> k
+j -> dʒ
+n -> ŋ / _[gk]
 r -> ɹ
 
-[ABCDEFGHIJKLMNOPQRSTUVWXYZ] -> (ej|biː|siː|diː|iː|ef|dʒiː|ejtʃ|aj|dʒej|kej|el|em|en|oʊ|piː|kjuː|ɑɹ|es|tiː|juː|viː|dʌbəljuː|eks|waj|ziː)
+[ABCDEFGHIJKLMNOPQRSTUVWXYZ] -> (ej|bi|si|di|i|ef|dʒi|ejtʃ|aj|dʒej|kej|el|em|en|oʊ|pi|kju|ɑɹ|es|ti|ju|vi|dʌbəlju|eks|waj|zi)
 
 '''
