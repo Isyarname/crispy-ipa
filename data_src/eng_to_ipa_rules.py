@@ -17,6 +17,13 @@ igh->aj                             light
 gh->g                               ghost
 ing -> ɪŋ / _#
 
+i -> aɪ / _zation#
+i -> aɪ / _sation#
+i -> aɪ / _zing#
+i -> aɪ / _sing#
+i -> aɪ / _zer#
+i -> aɪ / _ser#
+
 tio -> ʃə / _n#                     notion
 tia -> ʃə / _n#
 sion -> ʒən / [V]_                  explosion
