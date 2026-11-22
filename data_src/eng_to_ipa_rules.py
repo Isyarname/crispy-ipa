@@ -15,6 +15,7 @@ c -> s / _[eiy]                     special
 sch -> sk                           school
 igh->aj                             light
 gh->g                               ghost
+ing -> ɪŋ / _#
 
 tio -> ʃə / _n#                     notion
 tia -> ʃə / _n#
@@ -74,5 +75,7 @@ n -> ŋ / _[gk]
 r -> ɹ
 
 [ABCDEFGHIJKLMNOPQRSTUVWXYZ] -> (ej|bi|si|di|i|ef|dʒi|ejtʃ|aj|dʒej|kej|el|em|en|oʊ|pi|kju|ɑɹ|es|ti|ju|vi|dʌbəlju|eks|waj|zi)
+
+[C]{2} -> [C]
 
 '''

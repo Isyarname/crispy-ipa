@@ -1,6 +1,8 @@
 """Сверхбыстрый движок параллельного неразрушающего применения фонологических правил."""
+from __future__ import annotations
+
 import functools
-import unicodedata
+from collections.abc import Sequence
 
 Step = tuple[bool, tuple[str, ...]]
 CompiledRule = tuple[str, str, tuple[Step, ...], tuple[Step, ...]]
@@ -20,7 +22,7 @@ def check_right(text: str, pos: int, steps: tuple[Step, ...]) -> bool:
                     return True
             return False
         else:
-            val = variants
+            val = variants[0]
             if not text.startswith(val, pos):
                 return False
             pos += len(val)
@@ -42,11 +44,12 @@ def check_left(text: str, pos: int, steps: tuple[Step, ...]) -> bool:
                     return True
             return False
         else:
-            val = variants
+            val = variants[0]
             if not text.endswith(val, 0, pos):
                 return False
             pos -= len(val)
     return True
+
 
 @functools.lru_cache(maxsize=8)
 def _index_rules(
@@ -72,7 +75,6 @@ def apply_rules(word: str, rules: tuple[CompiledRule, ...]) -> str:
 
     buckets = _index_rules(rules)
 
-    # <-- ВОТ СЮДА ВСТАВЛЯЕТСЯ ЭТОТ БЛОК -->
     candidate_rules: list[tuple[int, CompiledRule]] = []
     for ch in dict.fromkeys(word):
         if ch in buckets:
@@ -103,7 +105,8 @@ def apply_rules(word: str, rules: tuple[CompiledRule, ...]) -> str:
     if not edits:
         return word
 
-    edits.sort(key=lambda e: e[0])
+    if len(edits) > 1:
+        edits.sort(key=lambda e: e[0])
 
     parts: list[str] = []
     last_pos = 1
@@ -116,6 +119,22 @@ def apply_rules(word: str, rules: tuple[CompiledRule, ...]) -> str:
     return "".join(parts)
 
 
-def process_text(text: str, rules: list[CompiledRule] | tuple[CompiledRule, ...]) -> str:
-    rules_tuple = rules if isinstance(rules, tuple) else tuple(rules)
-    return unicodedata.normalize("NFC", apply_rules(text, rules_tuple))
+@functools.lru_cache(maxsize=10000)
+def _transcribe_cached(text: str, rules_tuple: tuple[CompiledRule, ...]) -> str:
+    """Внутренняя функция с LRU-кэшем. Принимает хэшируемый кортеж правил."""
+    return apply_rules(text, rules_tuple)
+
+
+def transcribe(text: str, transcription_rules: Sequence[CompiledRule]) -> str:
+    """Применяет правила транскрипции к слову (с кэшированием результатов)."""
+    rules_tuple = (
+        transcription_rules
+        if isinstance(transcription_rules, tuple)
+        else tuple(transcription_rules)
+    )
+    return _transcribe_cached(text, rules_tuple)
+
+
+def clear_cache() -> None:
+    """Очищает кэш транскрипции."""
+    _transcribe_cached.cache_clear()

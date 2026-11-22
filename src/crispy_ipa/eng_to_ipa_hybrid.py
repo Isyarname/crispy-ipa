@@ -1,20 +1,19 @@
-"""Гибридный движок транскрипции: словарь исключений + rule_based_ipa."""
+"""Гибридный движок транскрипции: словарь исключений + rule_engine."""
 from __future__ import annotations
+
 import re
+from collections.abc import Sequence
 from functools import lru_cache
-from . import rule_based_ipa
+from . import rule_engine
+from .rule_engine import CompiledRule
 
 _WORD_PATTERN = re.compile(r"^[a-zA-Z']+$")
 _TOKEN_PATTERN = re.compile(r"[a-zA-Z']+|[^a-zA-Z']+")
 
 # Регулярки для умного разбиения и нормализации регистра
-# 1. Граница строчная → заглавная (начало нового слова/аббревиатуры)
 _CAMEL_BOUNDARY = re.compile(r'(?<=[a-z])(?=[A-Z])')
-# 2. Граница аббревиатура → слово (заглавная, за которой идут строчные)
 _ABBR_WORD_BOUNDARY = re.compile(r'(?<=[A-Z])(?=[A-Z][a-z])')
-# 3. Соседние заглавные буквы (разделяем буквы аббревиатуры)
 _UPPER_SEQUENCE = re.compile(r'(?<=[A-Z])(?=[A-Z])')
-# 4. Заглавная перед строчными (кандидат на понижение регистра)
 _WORD_START = re.compile(r'([A-Z])(?=[a-z])')
 
 _SUFFIXES = sorted({
@@ -28,10 +27,6 @@ _SUFFIXES = sorted({
 }, key=len, reverse=True)
 
 MAX_DICT_WORD_LEN = 8
-
-# Минимальная длина словарного сегмента, оканчивающего границу суффикса.
-# Меньше — значит граница суффикса разрезала словарное слово
-# (micro|dos|ing вместо micro|dosing), и суффикс отрезать нельзя.
 _MIN_PREFIX_WORD_LEN = 4
 
 
@@ -70,13 +65,6 @@ def _ends_with_dict_word(
     segments: list[tuple[str, bool]],
     min_len: int = _MIN_PREFIX_WORD_LEN,
 ) -> bool:
-    """True, если разбиение оканчивается словарным словом длиной >= min_len.
-
-    Это признак того, что граница суффикса совпала с реальной границей
-    слова: ghost|ing, scroll|ing, docker|izer. Если последний сегмент —
-    правила или короткий обрубок (dos в micro|dos|ing), граница суффикса
-    разрезала словарное слово, и суффикс отрезать нельзя.
-    """
     if not segments:
         return False
     last_text, is_dict = segments[-1]
@@ -89,14 +77,6 @@ def _split_word_from_end(
     boundary: int,
     long_keys: frozenset[str],
 ) -> list[tuple[str, bool]]:
-    """Ищет словарные слова с конца слова (композиты).
-
-    Английские композиты устроены как [модификатор][голова]:
-    binge|watch, side|hustle, doom|scroll. Поиск с конца сначала
-    находит голову (watch, hustle, scroll) — целое словарное слово, —
-    и только потом модификатор. При поиске с начала движок хватал бы
-    первый попавшийся префикс (dooms, overt), не проверяя голову.
-    """
     if not long_keys:
         return [(word[:boundary], False)]
 
@@ -145,10 +125,6 @@ def _build_word_segments(
     custom_exceptions: dict[str, str],
     long_keys: frozenset[str],
 ) -> dict[str, list[tuple[str, bool]]]:
-    """Разбивает каждый токен на сегменты (словарные и нет).
-
-    Возвращает словарь: слово → список сегментов [(текст, из_словаря?), ...]
-    """
     word_segments: dict[str, list[tuple[str, bool]]] = {}
 
     for token in tokens:
@@ -159,20 +135,14 @@ def _build_word_segments(
         if word_lower in word_segments:
             continue
 
-        # Сокращения не разбиваем
         if _is_abbreviation(token):
             word_segments[word_lower] = [(token, False)]
             continue
 
-        # Слова из словаря исключений
         if word_lower in custom_exceptions:
             word_segments[word_lower] = [(token, True)]
             continue
 
-        # Отрезаем продуктивный суффикс только если перед ним остаётся
-        # настоящее словарное слово. Иначе граница суффикса разрезает
-        # словарное слово (microdosing → micro|dos|ing вместо micro|dosing),
-        # и слово надо разбирать целиком.
         suffix_result = _find_suffix(word_lower)
         if suffix_result:
             boundary, suffix = suffix_result
@@ -200,7 +170,6 @@ def _build_word_segments(
 def _collect_unknown_words(
     word_segments: dict[str, list[tuple[str, bool]]],
 ) -> list[str]:
-    """Собирает уникальные сегменты, которых нет в словаре."""
     unknown: list[str] = []
     seen: set[str] = set()
 
@@ -217,17 +186,17 @@ def _collect_unknown_words(
 
 def _bulk_transcribe(
     words: list[str],
-    transcription_rules: list[tuple[str, str]],
+    transcription_rules: Sequence[CompiledRule],
 ) -> dict[str, str]:
     if not words:
         return {}
 
-    rules_tuple = tuple(transcription_rules)
-    mapping: dict[str, str] = {}
-    for word in words:
-        if word not in mapping:
-            mapping[word] = rule_based_ipa.transcribe(word, rules_tuple)
-    return mapping
+    rules_tuple = (
+        transcription_rules
+        if isinstance(transcription_rules, tuple)
+        else tuple(transcription_rules)
+    )
+    return {word: rule_engine.transcribe(word, rules_tuple) for word in words}
 
 
 # ─────────────────────────── Шаг 4: Сборка результата ───────────────────────────
@@ -236,9 +205,8 @@ def _build_final_tokens(
     tokens: list[str],
     word_segments: dict[str, list[tuple[str, bool]]],
     custom_exceptions: dict[str, str],
-    english_mapping: dict[str, str]
+    english_mapping: dict[str, str],
 ) -> list[str]:
-    """Собирает финальные токены: слова → IPA, остальное как есть."""
     final_tokens: list[str] = []
 
     for token in tokens:
@@ -256,8 +224,7 @@ def _build_final_tokens(
             else:
                 ipa_parts.append(english_mapping.get(seg_text, seg_text))
 
-        ipa_word = "".join(ipa_parts)
-        final_tokens.append(ipa_word)
+        final_tokens.append("".join(ipa_parts))
 
     return final_tokens
 
@@ -268,7 +235,7 @@ def transcribe(
     text: str,
     custom_exceptions: dict[str, str],
     long_keys: frozenset[str] | None,
-    transcription_rules: list[tuple[str, str]]
+    transcription_rules: Sequence[CompiledRule],
 ) -> str:
     if not text:
         return ""
@@ -278,7 +245,6 @@ def transcribe(
     if not tokens:
         return ""
 
-    # Fallback для тестов и обратной совместимости
     if long_keys is None:
         long_keys = frozenset(k for k in custom_exceptions if len(k) >= 4)
 
@@ -286,8 +252,7 @@ def transcribe(
     unknown_words = _collect_unknown_words(word_segments)
     english_mapping = _bulk_transcribe(unknown_words, transcription_rules)
     final_tokens = _build_final_tokens(
-        tokens, word_segments, custom_exceptions,
-        english_mapping
+        tokens, word_segments, custom_exceptions, english_mapping
     )
 
     return "".join(final_tokens).strip()
@@ -295,4 +260,4 @@ def transcribe(
 
 def clear_split_cache() -> None:
     _split_word_cached.cache_clear()
-    rule_based_ipa.clear_cache()
+    rule_engine.clear_cache()

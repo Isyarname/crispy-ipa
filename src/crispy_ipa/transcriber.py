@@ -1,9 +1,11 @@
-"""Класс-оркестратор транслитерации."""
+"""Класс-оркестратор транскрипции."""
 from __future__ import annotations
+
 import pickle
 from importlib import resources
 from pathlib import Path
 from . import eng_to_ipa_hybrid
+from .rule_engine import CompiledRule
 
 _PACKAGE_DATA = resources.files("crispy_ipa.data")
 
@@ -22,13 +24,21 @@ class Transcriber:
         Args:
             custom_vocabulary: Пользовательский словарь (дополняет встроенный).
         """
+        # --- Пользовательский словарь (сохраняем оригинал + вариант в нижнем регистре) ---
+        self._custom_vocabulary: dict[str, str] = {}
+        if custom_vocabulary:
+            for k, v in custom_vocabulary.items():
+                self._custom_vocabulary[k] = v
+                k_lower = k.lower()
+                if k_lower not in custom_vocabulary:
+                    self._custom_vocabulary[k_lower] = v
 
-        # --- Пользовательский словарь ---
-        self._custom_vocabulary = dict(custom_vocabulary) if custom_vocabulary else {}
 
         # --- Загрузка ресурсов ---
-        self._eng_to_ipa_rules = self._load_pickle(_ENG_TO_IPA_RULES_PATH)
-        self._en_dict = self._load_pickle(_EN_DICT_PATH)
+        self._eng_to_ipa_rules: tuple[CompiledRule, ...] = tuple(
+            self._load_pickle(_ENG_TO_IPA_RULES_PATH)
+        )
+        self._en_dict: dict[str, str] = self._load_pickle(_EN_DICT_PATH)
 
         # --- Объединённый словарь (собирается один раз) ---
         if self._custom_vocabulary:
@@ -44,18 +54,16 @@ class Transcriber:
     # ─────────────────────────── Публичный API ───────────────────────────
 
     def transcribe(self, text: str) -> str:
-        ipa_text = eng_to_ipa_hybrid.transcribe(
+        return eng_to_ipa_hybrid.transcribe(
             text,
             self._merged_vocabulary,
             self._long_keys,
             self._eng_to_ipa_rules,
         )
-        #print(ipa_text)                                                             ##############################
-        return ipa_text
 
     # ─────────────────────────── Доступ к ресурсам ───────────────────────
 
-    def get_eng_to_ipa_rules(self) -> list[tuple[str, str]]:
+    def get_eng_to_ipa_rules(self) -> tuple[CompiledRule, ...]:
         """Возвращает скомпилированные правила English → IPA."""
         return self._eng_to_ipa_rules
 
