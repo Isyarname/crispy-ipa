@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crispy-ipa"
-version = "0.1.1"
-description = "automatic english-to-IPA text transcriber"
+version = "0.1.2"
+description = "Fast English-to-IPA transcription in pure Python"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -45,11 +45,12 @@ dev = [
 Homepage = "https://github.com/Isyarname/crispy-ipa"
 Repository = "https://github.com/Isyarname/crispy-ipa"
 Issues = "https://github.com/Isyarname/crispy-ipa/issues"
+Changelog = "https://github.com/Isyarname/crispy-ipa/blob/main/docs/CHANGELOG.md"
 
 # src-layout: setuptools ищет пакеты внутри src/
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# Включаем текстовые ресурсы (словари, DSL-правила) в wheel
+# Включаем ресурсы в wheel
 [tool.setuptools.package-data]
 "crispy_ipa" = ["data/*.pkl"]
