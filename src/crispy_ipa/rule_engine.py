@@ -89,11 +89,15 @@ def apply_rules(word: str, rules: tuple[CompiledRule, ...]) -> str:
         index = src.find(L, 1)
         while index != -1:
             end = index + pat_len
-            if not any(occupied[index:end]):
+            is_free = (not occupied[index]) if pat_len == 1 else (not any(occupied[index:end]))
+            if is_free:
                 if check_left(src, index, left_steps) and check_right(src, end, right_steps):
                     edits.append((index, end, R))
-                    for i in range(index, end):
-                        occupied[i] = True
+                    if pat_len == 1:
+                        occupied[index] = True
+                    else:
+                        for i in range(index, end):
+                            occupied[i] = True
                     free_chars -= pat_len
                     if free_chars <= 0:
                         break
