@@ -63,6 +63,7 @@ y -> i
 
 
 s -> z / [Z]_#                      sons
+ed -> ɪd / [td]_#
 ed -> t / [!Z]_#                    dropped
 ed -> d / [Z]_#                     sniffled
 
