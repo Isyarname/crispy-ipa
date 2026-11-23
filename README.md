@@ -1,15 +1,15 @@
 # crispy-ipa
 
-Fast English-to-IPA transcription in pure Python with zero external dependencies.
+Fast English-to-IPA transcription.
 
 Designed as a fast, deterministic intermediate grapheme-to-phoneme (G2P) stage for practical transcription pipelines.
 
 ## Features
 
-* **Zero external dependencies:** built entirely on the Python standard library.
-* **Hybrid engine:** combines a 125,000+ word phonetic dictionary, compound-word splitting, and a non-destructive rule engine.
-* **High performance:** sub-millisecond processing without neural networks, heavy parsing, or sentence-level context analysis, backed by LRU caching.
-* **Custom vocabulary support:** easily extend or override transcriptions for domain-specific terms and proper nouns.
+* **Simple installation:** pure Python package with zero external dependencies.
+* **No skipped unknown words:** covers 125,000+ common English words and falls back to compound splitting and phonetic rules for rare terms or neologisms.
+* **Sub-millisecond speed for high-throughput pipelines:** operates without heavy neural models and uses built-in caching to accelerate repeated lookups.
+* **Full control over jargon and brand names:** override or add custom pronunciations (like `nginx` or `ChatGPT`) in a single dictionary so your pipeline never mispronounces domain-specific terms.
 
 ## Installation
 
