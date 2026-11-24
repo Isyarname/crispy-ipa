@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
-## [0.1.2] - 2026-11-23
+## [0.2.0] - 2026-11-25
+
+### Removed
+- **Breaking:** `Transcriber.get_eng_to_ipa_rules()`. Use `crispy_ipa.eng_to_ipa_rules.rules` for the DSL source.
 
 ### Fixed
 - Transcribe `-ed` suffix as `/ɪd/` after `t` and `d` in fallback phonetic rules.
