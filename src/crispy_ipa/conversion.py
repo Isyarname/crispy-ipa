@@ -228,6 +228,12 @@ def _build_final_tokens(
 
     return final_tokens
 
+# ─────────────────────────── Шаг 5: Нормализация ───────────────────────────
+
+def normalize(text: str) -> str:
+    for s in "aɪ":
+        text = text.replace(f"ɝ{s}", f"ɜɹ{s}")
+    return text
 
 # ─────────────────────────── Главная функция ───────────────────────────
 
@@ -255,7 +261,7 @@ def to_ipa(
         tokens, word_segments, custom_exceptions, english_mapping
     )
 
-    return "".join(final_tokens).strip()
+    return normalize("".join(final_tokens).strip())
 
 
 def clear_split_cache() -> None:
