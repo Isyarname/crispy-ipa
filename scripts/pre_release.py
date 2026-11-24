@@ -2,7 +2,6 @@
 
 Запуск:
     py scripts/pre_release.py                 # стандартная проверка + очистка + тесты
-    py scripts/pre_release.py --rebuild       # + пересобрать .pkl из data_src/
     py scripts/pre_release.py --no-example    # пропустить проверку примера
     py scripts/pre_release.py --no-clean      # не чистить dist/ и кэш
     py scripts/pre_release.py --no-reinstall  # не переустанавливать пакет
@@ -17,18 +16,15 @@ import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent
-DATA_SRC = PROJECT_ROOT / "data_src"
-DATA_PKL = PROJECT_ROOT / "src" / "crispy_ipa" / "data"
+DATA_DIR = PROJECT_ROOT / "src" / "crispy_ipa" / "data"
+RULES_SOURCE = PROJECT_ROOT / "src" / "crispy_ipa" / "eng_to_ipa_rules.py"
 INIT_FILE = PROJECT_ROOT / "src" / "crispy_ipa" / "__init__.py"
 PYPROJECT = PROJECT_ROOT / "pyproject.toml"
 CHANGELOG = PROJECT_ROOT / "docs" / "CHANGELOG.md"
 DIST_DIR = PROJECT_ROOT / "dist"
 
-# Источник в data_src/ → артефакт в src/.../data/
-RULES_MAP = {
-    "en_dict.txt": "en_dict.pkl",
-    "eng_to_ipa_rules.py": "eng_to_ipa_rules.pkl",
-}
+# Текстовые данные, которые парсятся при импорте crispy_ipa.transcriber.
+DATA_FILES = ["en_dict.txt"]
 
 README_FILES = ["README.md"]
 
@@ -62,12 +58,15 @@ def get_version_from_pyproject() -> str:
 
 
 def get_version_from_init() -> str:
-    """Читает __version__ через реальный импорт (учитывает importlib.metadata)."""
+    """Читает __version__ через реальный импорт (учитывает importlib.metadata).
+
+    Побочный эффект: импорт crispy_ipa.transcriber запускает parse_rules
+    и parse_dict (~100 мс). Это ожидаемо — данные парсятся при импорте.
+    """
     src = PROJECT_ROOT / "src"
     if str(src) not in sys.path:
         sys.path.insert(0, str(src))
 
-    # Сбрасываем закэшированный модуль, чтобы подхватить свежий __init__.py
     if "crispy_ipa" in sys.modules:
         del sys.modules["crispy_ipa"]
     for key in list(sys.modules.keys()):
@@ -92,28 +91,31 @@ def check_versions() -> tuple[bool, str | None]:
     return True, pyproject_v
 
 
-def check_rules_compiled() -> bool:
-    """Проверяет, что .pkl существуют и новее своих источников."""
+def check_data_files() -> bool:
+    """Проверяет, что текстовые данные и правила на месте и непустые."""
     ok = True
-    for src_name, pkl_name in RULES_MAP.items():
-        src = DATA_SRC / src_name
-        pkl = DATA_PKL / pkl_name
-        if not src.exists():
-            _err(f"Нет источника: {src}")
+    for name in DATA_FILES:
+        path = DATA_DIR / name
+        if not path.exists():
+            _err(f"Нет файла данных: {path}")
             ok = False
-            continue
-        if not pkl.exists():
-            _err(f"Нет .pkl: {pkl}")
+        elif path.stat().st_size == 0:
+            _err(f"Пустой файл данных: {path}")
             ok = False
-            continue
-        if pkl.stat().st_mtime < src.stat().st_mtime:
-            _warn(f"{pkl_name} старше {src_name} — .pkl устарел")
-            ok = False
+
+    if not RULES_SOURCE.exists():
+        _err(f"Нет файла правил: {RULES_SOURCE}")
+        ok = False
+    elif RULES_SOURCE.stat().st_size == 0:
+        _err(f"Пустой файл правил: {RULES_SOURCE}")
+        ok = False
+
     if ok:
-        _ok(f"Все .pkl актуальны ({len(RULES_MAP)} шт.)")
+        _ok(f"Данные на месте ({len(DATA_FILES)} файл(ов) + eng_to_ipa_rules.py)")
     return ok
 
-'''
+
+
 def check_changelog(version: str) -> bool:
     """CHANGELOG.md должен содержать запись для текущей версии."""
     if not CHANGELOG.exists():
@@ -127,7 +129,7 @@ def check_changelog(version: str) -> bool:
         return False
     _ok(f"CHANGELOG содержит запись для {version}")
     return True
-'''
+
 
 def check_readme() -> bool:
     """README файлы существуют и не пустые."""
@@ -177,7 +179,6 @@ def clean_dist() -> None:
         _ok("Артефакты сборки не найдены")
 
 
-
 def clean_cache() -> None:
     count = 0
     for p in PROJECT_ROOT.rglob("__pycache__"):
@@ -190,16 +191,6 @@ def clean_cache() -> None:
         except FileNotFoundError:
             pass
     _ok(f"Удалено кэш-файлов: {count}")
-
-
-def rebuild_rules() -> bool:
-    print("🔨 Пересборка .pkl из data_src/...")
-    for script in ["build_rules.py", "convert_dict.py"]:
-        print(f"   → scripts/{script}")
-        if _run([sys.executable, f"scripts/{script}"]) != 0:
-            _err(f"{script} упал")
-            return False
-    return True
 
 
 def reinstall_editable() -> bool:
@@ -216,7 +207,6 @@ def run_example() -> bool:
         _err("Не найден examples/basic_usage.py")
         return False
 
-    # Копируем текущее окружение и принудительно ставим UTF-8
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
 
@@ -244,7 +234,6 @@ def run_example() -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pre-release check")
-    parser.add_argument("--rebuild", action="store_true", help="Пересобрать .pkl из data_src/")
     parser.add_argument("--no-clean", action="store_true", help="Не чистить dist/ и кэш")
     parser.add_argument("--no-example", action="store_true", help="Не запускать проверку примера")
     parser.add_argument("--no-reinstall", action="store_true", help="Не переустанавливать пакет")
@@ -255,44 +244,38 @@ def main() -> None:
     print("PRE-RELEASE CHECK")
     print("=" * 60)
 
-    # 1. (Опционально) пересборка .pkl
-    if args.rebuild:
-        if not rebuild_rules():
-            sys.exit(1)
-
-    # 2. Очистка кэша и dist
+    # 1. Очистка кэша и dist
     if not args.no_clean:
         clean_dist()
         clean_cache()
 
-    # 3. Переустановка пакета (чтобы importlib.metadata / кэш подхватили новую версию)
+    # 2. Переустановка пакета (чтобы importlib.metadata / кэш подхватили новую версию)
     if not args.no_reinstall:
         if not reinstall_editable():
             _err("Не удалось переустановить пакет")
             sys.exit(1)
         _ok("Пакет переустановлен")
 
-    # 4. Проверка версий (теперь они точно синхронизированы)
+    # 3. Проверка версий
     ok, version = check_versions()
     if not ok or version is None:
         sys.exit(1)
 
-    # 5. .pkl актуальны
-    if not check_rules_compiled():
-        print("\nПодсказка: запусти с --rebuild, чтобы пересобрать .pkl автоматически")
+    # 4. Данные и правила на месте
+    if not check_data_files():
         sys.exit(1)
 
-    # 6. CHANGELOG содержит запись для версии
-    #if not check_changelog(version):
-    #    sys.exit(1)
+    # 5. CHANGELOG содержит запись для версии
+    if not check_changelog(version):
+        sys.exit(1)
 
-    # 7. README (warn или fail в strict)
+    # 6. README (warn или fail в strict)
     readme_ok = check_readme()
     if not readme_ok and args.strict:
         _err("README проверка упала (--strict)")
         sys.exit(1)
 
-    # 8. Git status (warn или fail в strict)
+    # 7. Git status (warn или fail в strict)
     git_ok = check_git_clean()
     if not git_ok and args.strict:
         _err("Git содержит незакоммиченные изменения (--strict)")
@@ -300,7 +283,7 @@ def main() -> None:
     if not git_ok:
         print("   ⚠️  Сборка возможна, но код в git не совпадает с тем, что уйдёт на PyPI.")
 
-    # 9. Проверка рабочего примера
+    # 8. Проверка рабочего примера
     if not args.no_example:
         if not run_example():
             _err("Пример упал")

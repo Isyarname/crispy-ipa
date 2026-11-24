@@ -11,47 +11,42 @@ IGNORE_FILES = {
     'main.py', '.DS_Store', 'Thumbs.db'
 }
 
-# How to render specific directories (path relative to project root, forward slashes):
-#   ("collapse", comment)              → `name/  # comment`
-#   ("collapse_as", suffix, comment)   → `name<suffix>  # comment`
-#   ("head", N, comment)               → show first N children, then `...`
-#   ("inline_child",)                  → if exactly one child dir, show `name/child/`
 TREE_MODES = {
-    "data_src": ("collapse", "Source rules & dictionary (not shipped)"),
     "docs": ("collapse", "Documentation"),
     "examples": ("collapse", "Usage examples"),
     "tests": ("collapse", "Pytest suite"),
-    "scripts": ("head", 2, "Build & release tools (not shipped)"),
+    "scripts": ("head", 4, "Dev & release tools (not shipped)"),
     "src": ("inline_child",),
-    "src/crispy_ipa/data": ("collapse_as", "/*.pkl", "Compiled runtime data"),
+    "src/crispy_ipa/data": ("collapse_as", "/*.txt", "EN → IPA dictionary"),
 }
 
 COMMENTS = {
-    "scripts/build_rules.py": "Compiles data_src/*.py → data/*.pkl",
-    "scripts/convert_dict.py": "Compiles data_src/en_dict.txt → data/en_dict.pkl",
     "src/crispy_ipa": "The library (this is what ships to PyPI)",
     "src/crispy_ipa/__init__.py": "Public API",
     "src/crispy_ipa/transcriber.py": "Orchestrator (entry point)",
-    "src/crispy_ipa/eng_to_ipa_hybrid.py": "EN → IPA (dictionary + rules)",
+    "src/crispy_ipa/conversion.py": "EN → IPA conversion (dictionary + rules)",
     "src/crispy_ipa/rule_based_ipa.py": "Applies EN → IPA rules",
     "src/crispy_ipa/ipa_to_ru.py": "Applies IPA → Cyrillic rules",
     "src/crispy_ipa/rule_engine.py": "Shared regex/literal rule executor",
+    "src/crispy_ipa/dict_parser.py": "Parses en_dict.txt → dict",
+    "src/crispy_ipa/dsl_parser.py": "DSL macro expander & rule compiler",
+    "src/crispy_ipa/eng_to_ipa_rules.py": "EN → IPA rule definitions (DSL source)",
     "pyproject.toml": "Metadata, build config",
 }
 
 CUSTOM_ORDER = {
     "scripts": [
-        "build_rules.py", "convert_dict.py",
         "benchmark.py", "dsl_translator.py", "make-tree.py", "pre_release.py",
     ],
     "src/crispy_ipa": [
         "data", "__init__.py", "transcriber.py",
-        "eng_to_ipa_hybrid.py", "rule_based_ipa.py", "ipa_to_ru.py", "rule_engine.py",
+        "conversion.py", "rule_based_ipa.py", "ipa_to_ru.py", "rule_engine.py",
+        "dict_parser.py", "dsl_parser.py", "eng_to_ipa_rules.py",
     ],
 }
 
 MERGES = [
-    ("README.md"),
+    ("README.md", "README.ru.md", "README.md / README.ru.md"),
 ]
 
 
@@ -165,7 +160,8 @@ def align_comments(lines: list[str], min_gap: int = 2) -> list[str]:
     for line in lines:
         content, sep, comment = line.partition("  # ")
         if sep:
-            parsed.append((content.rstrip(), comment.rstrip()))
+            cm = comment.rstrip()
+            parsed.append((content.rstrip(), cm or None))
         else:
             parsed.append((line.rstrip(), None))
 
@@ -184,7 +180,7 @@ def align_comments(lines: list[str], min_gap: int = 2) -> list[str]:
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    output_path = os.path.join(project_root, "structure.txt")
+    output_path = os.path.join(script_dir, "structure.txt")
 
     lines = [f"{os.path.basename(project_root)}/"]
     render(project_root, prefix="", relpath="", lines=lines)

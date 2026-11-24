@@ -231,7 +231,7 @@ def _build_final_tokens(
 
 # ─────────────────────────── Главная функция ───────────────────────────
 
-def transcribe(
+def to_ipa(
     text: str,
     custom_exceptions: dict[str, str],
     long_keys: frozenset[str] | None,

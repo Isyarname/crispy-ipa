@@ -15,7 +15,7 @@ if sys.platform == "win32":
 
 EXAMPLES_DIR = Path(__file__).parent
 TEXT_PATH = EXAMPLES_DIR / "text.txt"
-OUTPUT_PATH = Path.cwd() / "output_text.txt"
+OUTPUT_PATH = EXAMPLES_DIR / "output_text.txt"
 
 
 def run_pipeline() -> None:

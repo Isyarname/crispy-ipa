@@ -18,7 +18,6 @@ BRACKETS_RE = re.compile(r"\[(.*?)\]")
 GROUP_RE = re.compile(r"\(([^)]*)\)")
 CONTEXT_TOKEN_RE = re.compile(r"!?\[[^\]]+\]|!?\([^\)]+\)|!?.")
 NEG_GROUP_RE = re.compile(r"!\(([^)]+)\)|([^\s!]+)")
-REPEAT_RE = re.compile(r"(\[[^\]]+\]|\([^\)]+\)|.)\{(\d+)\}")
 
 
 def parse_lines(rules_str: str) -> list[tuple[str, str, str]]:
@@ -88,40 +87,6 @@ def expand_pair(left: str, right: str) -> list[tuple[str, str]]:
     combs2 = itertools.product(*aligned2)
     return [("".join(c1), "".join(c2)) for c1, c2 in zip(combs1, combs2)]
 
-
-def expand_repeats(left: str, right: str) -> list[tuple[str, str]]:
-    """
-    Раскрывает квантификаторы {n} (например, [C]{2} -> [C] или a[C]{2} -> a[C])
-    в идентичные повторы: ('pp', 'p'), ('tt', 't') и т.д.
-    """
-    m = REPEAT_RE.search(left)
-    if not m:
-        return expand_pair(left, right)
-
-    full_match = m.group(0)
-    group = m.group(1)
-    count = int(m.group(2))
-
-    if group.startswith("[") and group.endswith("]"):
-        opts = list(group[1:-1])
-    elif group.startswith("(") and group.endswith(")"):
-        opts = group[1:-1].split("|")
-    else:
-        opts = [group]
-
-    # Если та же группа есть и в правой части (например, [C]{2} -> [C]), подставляем тот же вариант
-    if group in right:
-        result = []
-        for opt in opts:
-            new_left = left.replace(full_match, opt * count, 1)
-            new_right = right.replace(group, opt, 1)
-            result.extend(expand_pair(new_left, new_right))
-        return result
-
-    expanded_left = left.replace(full_match, f"({'|'.join(opt * count for opt in opts)})", 1)
-    return expand_pair(expanded_left, right)
-
-
 def normalize_negated(tok: str) -> str:
     """Превращает '![aei]' -> '!(a|e|i)', '!a' -> '!(a)', '!(a|b)' -> '!(a|b)'."""
     body = tok[1:]
@@ -189,7 +154,7 @@ def parse_rules(
 
     result = []
     for left, right, context in parse_lines(rules_str):
-        expanded_pairs = expand_repeats(left, right)
+        expanded_pairs = expand_pair(left, right)
         compiled_contexts = [compile_context(ctx) for ctx in expand_context(context)]
         for exp_left, exp_right in expanded_pairs:
             # Нормализуем символ удаления звука ∅ в пустую строку
