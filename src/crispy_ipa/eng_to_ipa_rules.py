@@ -70,7 +70,9 @@ ed -> d / [Z]_#                     sniffled
 
 x -> gz / #_[V]                     example
 x -> ks                             explosion
+que -> k / _#
 qu -> kw
+q -> k
 tch -> tʃ
 ch -> tʃ
 sh -> ʃ
