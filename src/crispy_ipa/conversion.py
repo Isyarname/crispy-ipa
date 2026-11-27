@@ -229,10 +229,11 @@ def _build_final_tokens(
     return final_tokens
 
 # ─────────────────────────── Шаг 5: Нормализация ───────────────────────────
+VOWELS = "aæɑɒɔəɚɛɜɪiʊuʌeo"
 
 def normalize(text: str) -> str:
-    for s in "aɪ":
-        text = text.replace(f"ɝ{s}", f"ɜɹ{s}")
+    for v in VOWELS:
+        text = text.replace(f"ɝ{v}", f"ɜɹ{v}")
     return text
 
 # ─────────────────────────── Главная функция ───────────────────────────
