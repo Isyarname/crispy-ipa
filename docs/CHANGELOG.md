@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-27
+
+### Fixed
+- Added ɝ->ɜɹ normalization before vowels
+- Added q and word-final que transcription as /k/
+- Preferred ɔ variant when both ɑ and ɔ are listed in dictionary
+- Rules now prioritize longer patterns regardless of declaration order
+
 ## [0.2.0] - 2026-11-25
 
 ### Removed
