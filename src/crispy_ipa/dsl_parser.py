@@ -162,5 +162,5 @@ def parse_rules(
             for left_steps, right_steps in compiled_contexts:
                 result.append((exp_left, clean_right, left_steps, right_steps))
 
-    result.sort(key=lambda r: (-len(r), not (r or r)))
+    result.sort(key=lambda r: -len(r[0]))   # по длине левого паттерна
     return result
