@@ -2,8 +2,8 @@
 macros = {
 	"[V]": "[aeiouy]",
 	"[C]":"(b|c|d|f|g|h|k|l|m|n|p|q|r|s|t|v|w|x|z|sh|ch|th)",
-	"[Z]":"(b|d|g|v|z|ʒ|m|n|l|r|w)",
-	"[!Z]":"[hptkfs]",
+	"[Z]":"(b|d|g|v|z|j|m|n|l|r|w)",
+	"[!Z]":"[hptkfsq]",
 }
 
 
@@ -61,8 +61,11 @@ y -> j / [V]_
 y -> i
 [aeio] -> [æɜɪɑ] / _[C]
 
-
+'s -> ɪz / [szʃʒ]_#
+'s -> z / [Z]_#                     dockers
+'s -> z / [V]_#                     boy's
 s -> z / [Z]_#                      sons
+s -> z / [V]_#                      boys
 ed -> ɪd / [td]_#
 ed -> t / [!Z]_#                    dropped
 ed -> d / [Z]_#                     sniffled

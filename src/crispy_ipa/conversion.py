@@ -1,6 +1,7 @@
 """Гибридный движок транскрипции: словарь исключений + rule_engine."""
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Sequence
 from functools import lru_cache
@@ -23,11 +24,15 @@ _SUFFIXES = sorted({
     "ment", "ness", "tion", "sion", "able", "ible",
     "ful", "less", "ous", "ive",
     "ing", "ed", "ly", "er", "or", "est",
-    "es", "s",
+    "es", "s", "'s",
 }, key=len, reverse=True)
 
 MAX_DICT_WORD_LEN = 8
 _MIN_PREFIX_WORD_LEN = 4
+
+# (текст_сегмента, из_словаря, контекст_слева)
+Segment = tuple[str, bool, str]
+UnknownItem = tuple[str, str]
 
 
 # ─────────────────────────── Токенизация ───────────────────────────
@@ -118,14 +123,26 @@ def _split_word_cached(
     return tuple(_split_word_from_end(word, word_lower, boundary, long_keys))
 
 
+def _attach_left_context(raw_segments: list[tuple[str, bool]]) -> list[Segment]:
+    """Прикрепляет последние 4 графемы словарной основы к следующему за ней суффиксу."""
+    result: list[Segment] = []
+    for i, (seg_text, is_dict) in enumerate(raw_segments):
+        if not is_dict and i > 0 and raw_segments[i - 1][1]:
+            prev_tail = raw_segments[i - 1][0][-4:].lower()
+            result.append((seg_text, False, prev_tail))
+        else:
+            result.append((seg_text, is_dict, ""))
+    return result
+
+
 # ─────────────────────────── Шаг 1: Разбиение токенов на сегменты ───────────────────────────
 
 def _build_word_segments(
     tokens: list[str],
     custom_exceptions: dict[str, str],
     long_keys: frozenset[str],
-) -> dict[str, list[tuple[str, bool]]]:
-    word_segments: dict[str, list[tuple[str, bool]]] = {}
+) -> dict[str, list[Segment]]:
+    word_segments: dict[str, list[Segment]] = {}
 
     for token in tokens:
         if not _is_word_token(token):
@@ -136,11 +153,11 @@ def _build_word_segments(
             continue
 
         if _is_abbreviation(token):
-            word_segments[word_lower] = [(token, False)]
+            word_segments[word_lower] = [(token, False, "")]
             continue
 
         if word_lower in custom_exceptions:
-            word_segments[word_lower] = [(token, True)]
+            word_segments[word_lower] = [(token, True, "")]
             continue
 
         suffix_result = _find_suffix(word_lower)
@@ -150,17 +167,17 @@ def _build_word_segments(
                 _split_word_cached(token, word_lower, boundary, long_keys)
             )
             if _ends_with_dict_word(prefix_segments):
-                segments = prefix_segments + [(suffix, False)]
+                raw_segments = prefix_segments + [(suffix, False)]
             else:
-                segments = list(
+                raw_segments = list(
                     _split_word_cached(token, word_lower, len(word_lower), long_keys)
                 )
         else:
-            segments = list(
+            raw_segments = list(
                 _split_word_cached(token, word_lower, len(word_lower), long_keys)
             )
 
-        word_segments[word_lower] = segments
+        word_segments[word_lower] = _attach_left_context(raw_segments)
 
     return word_segments
 
@@ -168,27 +185,41 @@ def _build_word_segments(
 # ─────────────────────────── Шаг 2: Сбор неизвестных слов ───────────────────────────
 
 def _collect_unknown_words(
-    word_segments: dict[str, list[tuple[str, bool]]],
-) -> list[str]:
-    unknown: list[str] = []
-    seen: set[str] = set()
+    word_segments: dict[str, list[Segment]],
+) -> list[UnknownItem]:
+    unknown: list[UnknownItem] = []
+    seen: set[UnknownItem] = set()
 
     for segments in word_segments.values():
-        for seg_text, is_dict in segments:
-            if not is_dict and seg_text not in seen:
-                unknown.append(seg_text)
-                seen.add(seg_text)
+        for seg_text, is_dict, prev_tail in segments:
+            if not is_dict:
+                item = (seg_text, prev_tail)
+                if item not in seen:
+                    unknown.append(item)
+                    seen.add(item)
 
     return unknown
 
 
 # ─────────────────────────── Шаг 3: Транскрипция неизвестных слов ───────────────────────────
 
+def _transcribe_suffix(
+    stem_tail: str,
+    suffix: str,
+    rules_tuple: tuple[CompiledRule, ...],
+) -> str:
+    """Транскрибирует графемный суффикс с опорой на последние 4 графемы основы."""
+    full_ipa = rule_engine.transcribe(stem_tail + suffix, rules_tuple)
+    tail_ipa = rule_engine.transcribe(stem_tail, rules_tuple)
+    common_len = len(os.path.commonprefix([full_ipa, tail_ipa]))
+    return full_ipa[common_len:]
+
+
 def _bulk_transcribe(
-    words: list[str],
+    unknown_items: list[UnknownItem],
     transcription_rules: Sequence[CompiledRule],
-) -> dict[str, str]:
-    if not words:
+) -> dict[UnknownItem, str]:
+    if not unknown_items:
         return {}
 
     rules_tuple = (
@@ -196,16 +227,27 @@ def _bulk_transcribe(
         if isinstance(transcription_rules, tuple)
         else tuple(transcription_rules)
     )
-    return {word: rule_engine.transcribe(word, rules_tuple) for word in words}
+
+    mapping: dict[UnknownItem, str] = {}
+    for seg_text, prev_tail in unknown_items:
+        if prev_tail:
+            mapping[(seg_text, prev_tail)] = _transcribe_suffix(
+                prev_tail, seg_text.lower(), rules_tuple
+            )
+        else:
+            mapping[(seg_text, prev_tail)] = rule_engine.transcribe(
+                seg_text, rules_tuple
+            )
+    return mapping
 
 
 # ─────────────────────────── Шаг 4: Сборка результата ───────────────────────────
 
 def _build_final_tokens(
     tokens: list[str],
-    word_segments: dict[str, list[tuple[str, bool]]],
+    word_segments: dict[str, list[Segment]],
     custom_exceptions: dict[str, str],
-    english_mapping: dict[str, str],
+    english_mapping: dict[UnknownItem, str],
 ) -> list[str]:
     final_tokens: list[str] = []
 
@@ -218,23 +260,28 @@ def _build_final_tokens(
         segments = word_segments[word_lower]
         ipa_parts: list[str] = []
 
-        for seg_text, is_dict in segments:
+        for seg_text, is_dict, prev_tail in segments:
             if is_dict:
                 ipa_parts.append(custom_exceptions[seg_text.lower()])
             else:
-                ipa_parts.append(english_mapping.get(seg_text, seg_text))
+                ipa_parts.append(
+                    english_mapping.get((seg_text, prev_tail), seg_text)
+                )
 
         final_tokens.append("".join(ipa_parts))
 
     return final_tokens
 
+
 # ─────────────────────────── Шаг 5: Нормализация ───────────────────────────
 VOWELS = "aæɑɒɔəɚɛɜɪiʊuʌeo"
+
 
 def normalize(text: str) -> str:
     for v in VOWELS:
         text = text.replace(f"ɝ{v}", f"ɜɹ{v}")
     return text
+
 
 # ─────────────────────────── Главная функция ───────────────────────────
 
