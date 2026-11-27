@@ -7,7 +7,7 @@ custom_vocabulary = {
     "docker": "докер",
 }
 
-text = "The dockerizer is dockerizing the docker image."
+text = "The dockerizer is dockerizing the docker image. Docker's dockers."
 
 print("Без словаря:")
 t1 = Transcriber()
